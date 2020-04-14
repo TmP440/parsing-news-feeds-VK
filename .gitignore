@@ -1,129 +1,102 @@
-# Byte-compiled / optimized / DLL files
-__pycache__/
-*.py[cod]
-*$py.class
+from selenium import webdriver
+import time
+import json
+import sys
 
-# C extensions
-*.so
+a = input("LOGIN >>> ")
+b = input("PASSWORD >>> ")
 
-# Distribution / packaging
-.Python
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-pip-wheel-metadata/
-share/python-wheels/
-*.egg-info/
-.installed.cfg
-*.egg
-MANIFEST
 
-# PyInstaller
-#  Usually these files are written by a python script from a template
-#  before PyInstaller builds the exe, so as to inject date/other infos into it.
-*.manifest
-*.spec
+class VK():
+    def __init__(self):
+        global a, b
+        self.log = a
+        self.pas = b
+        self.driver = webdriver.Chrome()
+        self.news = []
+        self.text_of_new = []
 
-# Installer logs
-pip-log.txt
-pip-delete-this-directory.txt
+    def driver_server(self):
+        self.driver.get('https://vk.com')
 
-# Unit test / coverage reports
-htmlcov/
-.tox/
-.nox/
-.coverage
-.coverage.*
-.cache
-nosetests.xml
-coverage.xml
-*.cover
-*.py,cover
-.hypothesis/
-.pytest_cache/
+    def enter_vk(self):
+        login = self.driver.find_element_by_id('index_email')
+        password = self.driver.find_element_by_id('index_pass')
+        login.clear()
+        login.send_keys(self.log)
+        password.clear()
+        password.send_keys(self.pas)
+        self.driver.find_element_by_id('index_login_button').click()
 
-# Translations
-*.mo
-*.pot
+    def end(self):
+        self.driver.close()
+        print('Выхожу из соц.сети "ВК".')
 
-# Django stuff:
-*.log
-local_settings.py
-db.sqlite3
-db.sqlite3-journal
+    def json_id_and_imgs(self):
+        try:
+            time.sleep(8)
+            feedrow = self.driver.find_element_by_id('feed_rows')
+            feeds = feedrow.find_elements_by_class_name('feed_row')
+            print('Начинаю работать в новостях и форматирую в JSON--ФАЙЛ.')
+            file = open('json.json', 'w')
+            for feed in feeds:
+                div = feed.find_element_by_tag_name('div')
+                try:
+                    group = []
+                    id = div.get_attribute('data-post-id')
+                    feeds1 = feed.find_element_by_class_name('page_post_sized_thumbs')
+                    tag_a = feeds1.find_elements_by_tag_name('a')
+                    for i in tag_a:
+                        style = i.get_attribute('style')
+                        new_word = style[40:-1]
+                        word_url = new_word.find('url')
+                        url = new_word[(word_url + 5):-2]
+                        group.append(url)
+                    to_json = {'id': id, 'links': group}
+                    self.news.append(to_json)
+                except:
+                    continue
+        except:
+            self.end()
+            print('Были введены неверные данные.')
+            sys.exit()
+        file.write(json.dumps(self.news))
+        file.close()
 
-# Flask stuff:
-instance/
-.webassets-cache
+    def get_text(self):
+        print('Зашел в текстовую часть.')
+        file = open('json1.json', 'w', encoding='utf-8')
+        feedrow = self.driver.find_element_by_id('feed_rows')
+        feeds = feedrow.find_elements_by_class_name('feed_row')
+        for feed in feeds:
+            div = feed.find_element_by_tag_name('div')
+            try:
+                feed.find_element_by_class_name('media_desc post_video_desc')
+                continue
+            except:
+                try:
+                    id = div.get_attribute('data-post-id')
+                    feeds1 = feed.find_element_by_class_name('wall_post_text')
+                    text = feeds1.text
+                    if text == '' or 'https://vk.cc' in text:
+                        continue
+                    to_json1 = {'id': id, 'text': text}
+                    self.text_of_new.append(to_json1)
+                except:
+                    continue
+        file.write(json.dumps(self.text_of_new, ensure_ascii=False))
+        file.close()
 
-# Scrapy stuff:
-.scrapy
+    def main(self):
+        self.driver_server()
+        time.sleep(1)
+        self.enter_vk()
+        self.json_id_and_imgs()
+        time.sleep(2)
+        self.get_text()
+        time.sleep(3)
+        self.end()
 
-# Sphinx documentation
-docs/_build/
 
-# PyBuilder
-target/
-
-# Jupyter Notebook
-.ipynb_checkpoints
-
-# IPython
-profile_default/
-ipython_config.py
-
-# pyenv
-.python-version
-
-# pipenv
-#   According to pypa/pipenv#598, it is recommended to include Pipfile.lock in version control.
-#   However, in case of collaboration, if having platform-specific dependencies or dependencies
-#   having no cross-platform support, pipenv may install dependencies that don't work, or not
-#   install all needed dependencies.
-#Pipfile.lock
-
-# PEP 582; used by e.g. github.com/David-OConnor/pyflow
-__pypackages__/
-
-# Celery stuff
-celerybeat-schedule
-celerybeat.pid
-
-# SageMath parsed files
-*.sage.py
-
-# Environments
-.env
-.venv
-env/
-venv/
-ENV/
-env.bak/
-venv.bak/
-
-# Spyder project settings
-.spyderproject
-.spyproject
-
-# Rope project settings
-.ropeproject
-
-# mkdocs documentation
-/site
-
-# mypy
-.mypy_cache/
-.dmypy.json
-dmypy.json
-
-# Pyre type checker
-.pyre/
+vk = VK()
+vk.main()
